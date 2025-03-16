@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书籍扫描与书摘生成</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f7;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .prototype-title {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+        }
+        
+        .device {
+            width: 375px;
+            height: 812px;
+            background-color: white;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+            border-right: none;
+        }
+        
+        .device-name {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 30px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-bar {
+            height: 44px;
+            background-color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 83px;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        
+        .tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #999;
+            font-size: 10px;
+        }
+        
+        .tab.active {
+            color: #4A6FA5;
+        }
+        
+        .tab i {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .content {
+            height: calc(100% - 127px);
+            overflow-y: auto;
+            padding: 20px;
+            border-right: none;
+        }
+        
+        /* 扫描按钮样式 */
+        .scan-btn-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        
+        .scan-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4A6FA5, #6B8CCE);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(74, 111, 165, 0.4);
+        }
+        
+        .scan-btn i {
+            font-size: 30px;
+            color: white;
+        }
+        
+        /* 高级灰背景 */
+        .premium-gray-bg {
+            background: linear-gradient(135deg, #3C3C3C, #505050);
+        }
+        
+        /* 首页样式 */
+        .home-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .home-title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .home-action {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f5f5f7;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .view-all {
+            font-size: 14px;
+            color: #4A6FA5;
+        }
+        
+        /* 最近扫描书籍样式 */
+        .recent-books {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .book-card {
+            min-width: 150px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .book-cover {
+            width: 150px;
+            height: 220px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+        }
+        
+        .book-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .book-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .book-author {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 书摘集合样式 */
+        .excerpt-collections {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .collection-card {
+            background-color: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .collection-header {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .collection-book-cover {
+            width: 50px;
+            height: 75px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .collection-book-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .collection-info {
+            flex: 1;
+        }
+        
+        .collection-book-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .collection-book-author {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .collection-count {
+            font-size: 12px;
+            color: #999;
+            margin-top: 3px;
+        }
+        
+        .collection-previews {
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+        }
+        
+        .collection-preview {
+            width: 80px;
+            height: 120px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .collection-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .collection-actions {
+            display: flex;
+            padding: 15px;
+            justify-content: space-around;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .collection-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .collection-action i {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        /* 扫描页面样式 */
+        .scan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .scan-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .scan-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .camera-view {
+            width: 100%;
+            height: 500px;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .camera-view img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .scan-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 60%;
+            border: 2px solid #4A6FA5;
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+        
+        .scan-actions {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .scan-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .scan-action-btn i {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .capture-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .capture-btn-inner {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #4A6FA5;
+        }
+        
+        /* 识别结果页面样式 */
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .result-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .result-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .book-info {
+            display: flex;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .book-cover {
+            width: 100px;
+            height: 150px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-right: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .book-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .book-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .book-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .book-author {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .book-description {
+            font-size: 14px;
+            color: #999;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            
+            /* Add standard line-clamp property for compatibility */
+            line-clamp: 3;
+        }
+        
+        .result-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-section-title span {
+            color: #4A6FA5;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .excerpts-section {
+            margin-bottom: 20px;
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .result-btn {
+            flex: 1;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+            gap: 8px;
+        }
+        
+        .primary-btn {
+            background-color: #4A6FA5;
+            color: white;
+        }
+        
+        .secondary-btn {
+            background-color: #f5f5f7;
+            color: #4A6FA5;
+        }
+        
+        /* 书摘详情页面样式 */
+        .excerpt-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .excerpt-detail-back {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .excerpt-detail-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .excerpt-detail-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .excerpt-detail-templates {
+            margin-bottom: 20px;
+        }
+        
+        .templates-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        .template-item {
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .template-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .template-item.selected {
+            border: 2px solid #4A6FA5;
+        }
+        
+        .excerpt-detail-actions-bottom {
+            margin-top: 20px;
+        }
+        
+        /* 修复 line-clamp 兼容性问题 */
+        .description-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            
+            /* 添加标准属性 */
+            display: -moz-box;
+            display: box;
+            -moz-line-clamp: 3;
+            line-clamp: 3;
+            box-orient: vertical;
+            -moz-box-orient: vertical;
+        }
+        
+        /* 优雅的淡蓝色渐变背景 */
+        .elegant-blue-gradient {
+            background: linear-gradient(135deg, #E8F1FD, #C7E1FF);
+        }
+        
+        /* 书摘文字样式 */
+        .quote-text {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 17px;
+            line-height: 1.7;
+            color: #2C3E50;
+            text-align: center;
+            margin-bottom: 24px;
+            font-style: italic;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+        
+        /* 书籍信息样式 */
+        .book-info-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .author-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #3B82C4;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .book-title-text {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: #2C3E50;
+            margin-bottom: 3px;
+        }
+        
+        .author-name-text {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 13px;
+            color: #5D7793;
+            font-weight: 500;
+        }
+        
+        /* 移除弹出层样式 */
+        .popup-overlay,
+        .popup-content,
+        .popup-close,
+        .popup-actions,
+        .popup-save-btn,
+        .popup-pagination,
+        .popup-pagination-dot {
+            display: none;
+        }
+        
+        /* 恢复书摘卡片原始样式 */
+        .excerpt-card {
+            cursor: default;
+            transition: none;
+        }
+        
+        .excerpt-card:active {
+            transform: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* 匹配附件图片的淡蓝色背景 */
+        .light-blue-bg {
+            background-color: #E8F0FB;
+            background: linear-gradient(135deg, #E8F0FB, #DCE8F7);
+        }
+        
+        /* 更新文字颜色以匹配背景 */
+        .quote-text {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 17px;
+            line-height: 1.7;
+            color: #2C3E50;
+            text-align: center;
+            margin-bottom: 24px;
+            font-style: italic;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+        
+        /* 更精确匹配附件图片的背景渐变 */
+        .blue-pink-gradient {
+            background: linear-gradient(to bottom, #E8F0FB 60%, #F0E8F0 100%);
+        }
+        
+        /* 更新文字样式以匹配图片 */
+        .quote-text-refined {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 17px;
+            line-height: 1.7;
+            color: #2C3E50;
+            text-align: center;
+            margin-bottom: 24px;
+            font-style: normal;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+        
+        /* 移除现代按钮相关样式 */
+        .modern-btn,
+        .modern-primary-btn,
+        .modern-secondary-btn,
+        .modern-actions,
+        .modern-btn-full {
+            display: none;
+        }
+        
+        /* 恢复原始按钮样式的可见性 */
+        .result-actions,
+        .result-btn,
+        .primary-btn,
+        .secondary-btn {
+            display: flex;
+        }
+        
+        /* 页面指示器样式 */
+        .page-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #D0D0D0;
+            transition: all 0.3s ease;
+        }
+        
+        .indicator-dot.active {
+            width: 20px;
+            border-radius: 4px;
+            background-color: #4A6FA5;
+        }
+        
+        /* 全屏书摘样式 */
+        .excerpt-fullscreen {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 4/5;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            border-right: none;
+        }
+        
+        /* 滑动容器样式优化 */
+        .swipe-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            touch-action: pan-y;
+        }
+        
+        /* 书摘轮播容器 */
+        .excerpts-carousel {
+            display: flex;
+            transition: transform 0.3s ease;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 单个书摘样式 */
+        .excerpt-slide {
+            flex: 0 0 100%;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 添加过渡动画 */
+        .with-transition {
+            transition: transform 0.3s ease;
+        }
+        
+        /* 滑动提示样式 */
+        .swipe-hint {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0.8;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        /* 页面指示器样式优化 */
+        .page-indicator {
+            margin: 15px 0 25px;
+        }
+        
+        /* 书籍介绍卡片样式 */
+        .book-intro-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 25px;
+            height: 100%;
+            justify-content: center;
+        }
+        
+        /* 自适应文字大小类 */
+        .adaptive-text {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+        }
+        
+        .book-intro-title {
+            font-size: clamp(18px, 5vw, 24px);
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2C3E50;
+        }
+        
+        .book-intro-author {
+            font-size: clamp(14px, 4vw, 18px);
+            color: #5D7793;
+            margin-bottom: 15px;
+        }
+        
+        .book-intro-description {
+            font-size: clamp(12px, 3.5vw, 16px);
+            line-height: 1.6;
+            color: #2C3E50;
+            margin-bottom: 15px;
+            -webkit-line-clamp: 8;
+            max-height: 205px;
+
+            /* Add standard line-clamp property for compatibility */
+            line-clamp: 3;
+        }
+        
+        /* 书籍封面样式优化 */
+        .book-intro-cover {
+            width: 120px;
+            height: 180px;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .book-cover-title {
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2C3E50;
+        }
+        
+        /* 第一张书摘样式优化 */
+        .book-intro-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 25px;
+            height: 100%;
+            justify-content: center;
+        }
+        
+        /* 作者头像样式 */
+        .author-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* 书摘内容样式优化 */
+        .excerpt-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 25px;
+        }
+        
+        /* 顶部作者信息样式 - 居中显示 */
+        .author-info-centered {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-top: 20px;
+        }
+        
+        .author-avatar-centered {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .book-info-centered {
+            text-align: center;
+        }
+        
+        /* 引用文本样式优化 */
+        .quote-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 作者信息水平布局样式 - 居中显示 */
+        .author-info-centered-horizontal {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px; /* 减少与书摘内容的距离 */
+            padding-top: 20px;
+        }
+        
+        .author-avatar-horizontal {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        
+        .book-info-horizontal {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 引用文本样式优化 */
+        .quote-text-refined {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px; /* 稍微增大字体 */
+            line-height: 1.7;
+            color: #2C3E50;
+            text-align: center;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+        
+        /* 确保没有滚动条显示 */
+        .content {
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        
+        .content::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        /* 修复可能的溢出问题 */
+        .device {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="prototype-title">书籍扫描与书摘生成</h1>
+    
+    <!-- 扫描页面优化 - 调整相机视图和拍照按钮位置 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>书摘</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content" style="padding: 0; position: relative; height: 100%;">
+                <!-- 顶部标题栏 -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background-color: #fff;">
+                    <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-times" style="color: #333; font-size: 20px;"></i>
+                    </div>
+                    <div style="color: #333; font-size: 18px; font-weight: 600;">扫描书籍</div>
+                    <div style="width: 36px;"></div> <!-- 占位元素，保持标题居中 -->
+                </div>
+                
+                <!-- 相机视图 (占据上部分三分之二) -->
+                <div style="position: absolute; top: 66px; left: 0; right: 0; height: calc(66% - 66px); background-color: #000; overflow: hidden;">
+                    <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80" alt="Camera View" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8);">
+                    
+                    <!-- 扫描框 -->
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 70%; border: 2px solid rgba(255,255,255,0.8); border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);"></div>
+                    
+                    <!-- 提示文字 -->
+                    <div style="position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: white; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                        将书籍封面对准框内
+                    </div>
+                </div>
+                
+                <!-- 底部区域 (占据下部分三分之一) - 优化拍照按钮 -->
+                <div style="position: absolute; top: 66%; left: 0; right: 0; bottom: 0; background-color: #f5f5f7; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
+                    <!-- 改进的iPhone风格拍照按钮 -->
+                    <div style="width: 100px; height: 100px; border-radius: 50%; background-color: rgba(255,255,255,1.0); display: flex; justify-content: center; align-items: center; margin-top: -100px;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: white; border: 2px solid rgba(0,0,0,0.4);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">扫描页面</div>
+    </div>
+    
+    <!-- 识别结果页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>书摘</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="result-header">
+                    <div class="result-back"><i class="fas fa-arrow-left"></i></div>
+                    <div class="result-title">识别结果</div>
+                    <div class="result-action"><i class="fas fa-ellipsis-h"></i></div>
+                </div>
+                
+                <!-- 优化扫描结果页面的书籍信息布局 -->
+                <div class="book-info" style="margin-bottom: 25px; display: flex; align-items: flex-start;">
+                    <div class="book-cover" style="flex-shrink: 0;">
+                        <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80" alt="Book Cover">
+                    </div>
+                    <div class="book-details" style="padding-top: 0;">
+                        <div class="book-title" style="margin-top: 0; font-size: 22px;">原子习惯</div>
+                        <div class="book-author" style="margin-bottom: 8px;">詹姆斯·克利尔</div>
+                        <div class="book-publisher" style="margin-bottom: 10px;">中信出版社</div>
+                        <div class="book-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                            <span>4.5</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-actions">
+                    <div class="result-btn primary-btn">
+                        <i class="fas fa-magic"></i>
+                        <span>确认并生成</span>
+                    </div>
+                    <!-- <div class="result-btn primary-btn">
+                        <i class="fas fa-check"></i>
+                        <span>完成</span>
+                    </div> -->
+                </div>
+            </div>
+        </div>
+        <div class="device-name">识别结果页面</div>
+    </div>
+    
+    <!-- 书摘详情页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>书摘</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="excerpt-detail-header">
+                    <div class="excerpt-detail-back"><i class="fas fa-arrow-left"></i></div>
+                </div>
+
+                <div class="excerpts-section">
+                    <div class="section-title">
+                        <span>已生成的书摘图片</span>
+                        <span class="view-all" style="font-size: 14px; color: #4A6FA5;">1/5</span>
+                    </div>
+                    
+                    <!-- 更新滑动容器，添加五张书摘 -->
+                    <div class="swipe-container" id="excerptSwiper">
+                        <div class="excerpts-carousel" id="excerptsCarousel">
+                            <!-- 书摘1：书籍和作者介绍 -->
+                            <div class="excerpt-slide">
+                                <div class="excerpt-fullscreen">
+                                    <div class="blue-pink-gradient" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                        <div class="book-intro-card">
+                                            <!-- 添加作者头像 -->
+                                            <div class="author-photo">
+                                                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80" alt="Author" style="width: 100%; height: 100%; object-fit: cover;">
+                                            </div>
+                                            
+                                            <div class="book-intro-title adaptive-text">原子习惯</div>
+                                            <div class="book-intro-author adaptive-text">詹姆斯·克利尔</div>
+                                            <div class="book-intro-description adaptive-text">
+                                                这本书揭示了养成好习惯和打破坏习惯的方法。作者提出了"原子习惯"的概念，即微小的改变和习惯会带来巨大的成果。通过四个简单步骤，你可以建立更好的习惯：明确提示、渴望行动、轻松响应和令人满意的奖励。好习惯是复利的魔力，每天进步1%，一年后你将会进步37倍。
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 书摘2 -->
+                            <div class="excerpt-slide">
+                                <div class="excerpt-fullscreen">
+                                    <div class="blue-pink-gradient" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                        <div class="excerpt-content">
+                                            <!-- 作者信息水平布局 - 居中显示 -->
+                                            <div class="author-info-centered-horizontal">
+                                                <div class="author-avatar-horizontal">
+                                                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80" alt="Author" style="width: 100%; height: 100%; object-fit: cover;">
+                                                </div>
+                                                <div class="book-info-horizontal">
+                                                    <div style="font-weight: 600; font-size: 18px; color: #2C3E50; margin-bottom: 5px;">原子习惯</div>
+                                                    <div style="font-size: 15px; color: #5D7793;">詹姆斯·克利尔</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 引用文本 -->
+                                            <div class="quote-container">
+                                                <div class="quote-text-refined">
+                                                    "习惯是复利的魔力。每天进步1%，一年后你将会进步37倍；每天退步1%，一年后你将只剩下原来的3%。"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 书摘3 -->
+                            <div class="excerpt-slide">
+                                <div class="excerpt-fullscreen">
+                                    <div class="blue-pink-gradient" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                        <div class="excerpt-content">
+                                            <!-- 作者信息水平布局 - 居中显示 -->
+                                            <div class="author-info-centered-horizontal">
+                                                <div class="author-avatar-horizontal">
+                                                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80" alt="Author" style="width: 100%; height: 100%; object-fit: cover;">
+                                                </div>
+                                                <div class="book-info-horizontal">
+                                                    <div style="font-weight: 600; font-size: 18px; color: #2C3E50; margin-bottom: 5px;">原子习惯</div>
+                                                    <div style="font-size: 15px; color: #5D7793;">詹姆斯·克利尔</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 引用文本 -->
+                                            <div class="quote-container">
+                                                <div class="quote-text-refined">
+                                                    "我们的大脑喜欢完成的事情，当我们把事情完成，大脑就会分泌多巴胺。这就是为什么待办清单如此令人满足。"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 书摘4 -->
+                            <div class="excerpt-slide">
+                                <div class="excerpt-fullscreen">
+                                    <div class="blue-pink-gradient" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                        <div class="excerpt-content">
+                                            <!-- 作者信息水平布局 - 居中显示 -->
+                                            <div class="author-info-centered-horizontal">
+                                                <div class="author-avatar-horizontal">
+                                                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80" alt="Author" style="width: 100%; height: 100%; object-fit: cover;">
+                                                </div>
+                                                <div class="book-info-horizontal">
+                                                    <div style="font-weight: 600; font-size: 18px; color: #2C3E50; margin-bottom: 5px;">原子习惯</div>
+                                                    <div style="font-size: 15px; color: #5D7793;">詹姆斯·克利尔</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 引用文本 -->
+                                            <div class="quote-container">
+                                                <div class="quote-text-refined">
+                                                    "身份比结果更重要。真正的改变是身份的改变，而不仅仅是结果的改变。你的习惯塑造了你的身份，而你的身份影响了你的习惯。"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 书摘5 -->
+                            <div class="excerpt-slide">
+                                <div class="excerpt-fullscreen">
+                                    <div class="blue-pink-gradient" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                        <div class="excerpt-content">
+                                            <!-- 作者信息水平布局 - 居中显示 -->
+                                            <div class="author-info-centered-horizontal">
+                                                <div class="author-avatar-horizontal">
+                                                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80" alt="Author" style="width: 100%; height: 100%; object-fit: cover;">
+                                                </div>
+                                                <div class="book-info-horizontal">
+                                                    <div style="font-weight: 600; font-size: 18px; color: #2C3E50; margin-bottom: 5px;">原子习惯</div>
+                                                    <div style="font-size: 15px; color: #5D7793;">詹姆斯·克利尔</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 引用文本 -->
+                                            <div class="quote-container">
+                                                <div class="quote-text-refined">
+                                                    "环境是行为变化的催化剂。设计一个有利于好习惯养成的环境，比依靠意志力更有效。让好习惯变得显而易见、有吸引力、简单易行和令人满足。"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 滑动提示 -->
+                        <!-- <div class="swipe-hint" id="swipeHint">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>左右滑动查看更多</span>
+                        </div> -->
+                    </div>
+                    
+                    <!-- 更新页面指示器，增加到5个点 -->
+                    <div class="page-indicator">
+                        <div class="indicator-dot active"></div>
+                        <div class="indicator-dot"></div>
+                        <div class="indicator-dot"></div>
+                        <div class="indicator-dot"></div>
+                        <div class="indicator-dot"></div>
+                    </div>
+                </div>
+                
+                <!-- 恢复原始的按钮结构 -->
+                <div class="excerpt-detail-actions-bottom" style="margin-top: 30px;">
+                    <div class="result-btn primary-btn" style="width: 100%;">
+                        <i class="fas fa-download"></i>
+                        <!-- <span>保存全部图片</span> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">书摘详情页面</div>
+    </div>
+    
+    <!-- 移除弹出层相关代码 -->
+    <style>
+        /* 移除弹出层样式 */
+        .popup-overlay,
+        .popup-content,
+        .popup-close,
+        .popup-actions,
+        .popup-save-btn,
+        .popup-pagination,
+        .popup-pagination-dot {
+            display: none;
+        }
+        
+        /* 恢复书摘卡片原始样式 */
+        .excerpt-card {
+            cursor: default;
+            transition: none;
+        }
+        
+        .excerpt-card:active {
+            transform: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+
+    <script>
+        // 移除所有弹出层相关的事件监听器
+        document.querySelectorAll('.excerpt-card').forEach(card => {
+            const newCard = card.cloneNode(true);
+            card.parentNode.replaceChild(newCard, card);
+        });
+        
+        // 清除弹出层相关函数
+        function showPopup() {}
+        function hidePopup() {}
+        
+        // 页面加载后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取所有指示器点
+            const dots = document.querySelectorAll('.indicator-dot');
+            // 获取页码显示
+            const pageCounter = document.querySelector('.view-all');
+            // 获取滑动容器
+            const swiper = document.getElementById('excerptSwiper');
+            // 获取轮播容器
+            const carousel = document.getElementById('excerptsCarousel');
+            // 获取滑动提示
+            const swipeHint = document.getElementById('swipeHint');
+            
+            let currentPage = 0;
+            const totalPages = dots.length;
+            
+            // 滑动相关变量
+            let startX = 0;
+            let endX = 0;
+            let threshold = 50; // 滑动阈值
+            let isMouseDown = false;
+            let isDragging = false;
+            let initialOffset = 0;
+            
+            // 更新轮播位置
+            function updateCarousel(animate = true) {
+                if (animate) {
+                    carousel.classList.add('with-transition');
+                } else {
+                    carousel.classList.remove('with-transition');
+                }
+                
+                carousel.style.transform = `translateX(-${currentPage * 100}%)`;
+            }
+            
+            // 更新指示器状态
+            function updateIndicator() {
+                dots.forEach((dot, index) => {
+                    if (index === currentPage) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+                
+                // 更新页码显示
+                pageCounter.textContent = `${currentPage + 1}/${totalPages}`;
+                
+                // 更新轮播位置
+                updateCarousel();
+            }
+            
+            // 处理滑动逻辑
+            function handleSwipe(diffX) {
+                if (diffX > threshold && currentPage > 0) {
+                    // 向右滑动，显示上一页
+                    currentPage--;
+                    updateIndicator();
+                    return true;
+                } else if (diffX < -threshold && currentPage < totalPages - 1) {
+                    // 向左滑动，显示下一页
+                    currentPage++;
+                    updateIndicator();
+                    return true;
+                } else {
+                    // 回到原位
+                    updateCarousel();
+                    return false;
+                }
+            }
+            
+            // 添加触摸事件监听
+            swiper.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+                initialOffset = -currentPage * 100;
+                carousel.classList.remove('with-transition');
+            });
+            
+            swiper.addEventListener('touchmove', function(e) {
+                // 防止页面滚动
+                e.preventDefault();
+                
+                const currentX = e.touches[0].clientX;
+                const diffX = currentX - startX;
+                const percentMove = (diffX / swiper.offsetWidth) * 100;
+                
+                // 限制拖动范围
+                if ((currentPage === 0 && diffX > 0) || (currentPage === totalPages - 1 && diffX < 0)) {
+                    // 第一页向右拖或最后一页向左拖时，添加阻尼效果
+                    const dampedPercentMove = percentMove / 3;
+                    carousel.style.transform = `translateX(${initialOffset + dampedPercentMove}%)`;
+                } else {
+                    carousel.style.transform = `translateX(${initialOffset + percentMove}%)`;
+                }
+            }, { passive: false });
+            
+            swiper.addEventListener('touchend', function(e) {
+                endX = e.changedTouches[0].clientX;
+                
+                // 计算滑动距离
+                const diffX = endX - startX;
+                
+                // 处理滑动
+                handleSwipe(diffX);
+            });
+            
+            // 添加鼠标事件监听，模拟触摸滑动
+            swiper.addEventListener('mousedown', function(e) {
+                isMouseDown = true;
+                isDragging = false;
+                startX = e.clientX;
+                initialOffset = -currentPage * 100;
+                
+                // 改变鼠标样式，提示可拖动
+                swiper.style.cursor = 'grabbing';
+                
+                // 移除过渡效果，实现即时拖动
+                carousel.classList.remove('with-transition');
+                
+                // 防止拖动时选中文本
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isMouseDown) return;
+                
+                isDragging = true;
+                const currentX = e.clientX;
+                const diffX = currentX - startX;
+                const percentMove = (diffX / swiper.offsetWidth) * 100;
+                
+                // 限制拖动范围
+                if ((currentPage === 0 && diffX > 0) || (currentPage === totalPages - 1 && diffX < 0)) {
+                    // 第一页向右拖或最后一页向左拖时，添加阻尼效果
+                    const dampedPercentMove = percentMove / 3;
+                    carousel.style.transform = `translateX(${initialOffset + dampedPercentMove}%)`;
+                } else {
+                    carousel.style.transform = `translateX(${initialOffset + percentMove}%)`;
+                }
+            });
+            
+            document.addEventListener('mouseup', function(e) {
+                if (!isMouseDown) return;
+                
+                // 恢复鼠标样式
+                swiper.style.cursor = 'grab';
+                
+                endX = e.clientX;
+                isMouseDown = false;
+                
+                // 如果只是点击而非拖动，不进行滑动处理
+                if (!isDragging) {
+                    return;
+                }
+                
+                // 计算滑动距离
+                const diffX = endX - startX;
+                
+                // 处理滑动
+                handleSwipe(diffX);
+                
+                isDragging = false;
+            });
+            
+            // 鼠标进入时改变样式，提示可拖动
+            swiper.addEventListener('mouseenter', function() {
+                swiper.style.cursor = 'grab';
+            });
+            
+            // 防止拖动过程中失去鼠标焦点导致的问题
+            document.addEventListener('mouseleave', function() {
+                if (isMouseDown) {
+                    isMouseDown = false;
+                    isDragging = false;
+                    updateCarousel(); // 回到原位
+                }
+                swiper.style.cursor = 'grab';
+            });
+            
+            // 点击指示器切换页面
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', function() {
+                    currentPage = index;
+                    updateIndicator();
+                });
+            });
+            
+            // 3秒后隐藏滑动提示
+            setTimeout(function() {
+                swipeHint.style.opacity = '0';
+                swipeHint.style.transition = 'opacity 0.5s ease';
+                
+                // 完全隐藏
+                setTimeout(function() {
+                    swipeHint.style.display = 'none';
+                }, 500);
+            }, 3000);
+            
+            // 初始化鼠标样式和轮播位置
+            swiper.style.cursor = 'grab';
+            updateCarousel(false);
+            
+            // 处理过渡结束事件
+            carousel.addEventListener('transitionend', function() {
+                carousel.classList.remove('with-transition');
+            });
+            
+            // 获取描述文本元素
+            const description = document.querySelector('.book-intro-description');
+            
+            // 检查文本是否溢出
+            function checkOverflow(el) {
+                const curHeight = el.clientHeight;
+                const scrollHeight = el.scrollHeight;
+                return scrollHeight > curHeight;
+            }
+            
+            // 如果文本溢出，逐步减小字体大小
+            function adjustTextSize() {
+                if (description && checkOverflow(description)) {
+                    let currentSize = parseFloat(window.getComputedStyle(description).fontSize);
+                    
+                    // 逐步减小字体大小直到不再溢出或达到最小字体大小
+                    while (checkOverflow(description) && currentSize > 10) {
+                        currentSize -= 0.5;
+                        description.style.fontSize = currentSize + 'px';
+                    }
+                    
+                    // 如果仍然溢出，减少显示的行数
+                    if (checkOverflow(description)) {
+                        let lineClamp = 8;
+                        while (checkOverflow(description) && lineClamp > 3) {
+                            lineClamp--;
+                            description.style.webkitLineClamp = lineClamp;
+                            description.style.maxHeight = (lineClamp * 1.6 * currentSize) + 'px';
+                        }
+                    }
+                }
+            }
+            
+            // 页面加载和窗口大小改变时调整文字大小
+            window.addEventListener('resize', adjustTextSize);
+            adjustTextSize();
+        });
+    </script>
+</body>
+</html>

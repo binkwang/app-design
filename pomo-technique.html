@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄工作法应用原型</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f7;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .prototype-title {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .device {
+            width: 375px;
+            height: 812px;
+            background-color: white;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+        }
+        
+        .device-name {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 30px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-bar {
+            height: 44px;
+            background-color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 83px;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        
+        .tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #999;
+            font-size: 10px;
+        }
+        
+        .tab.active {
+            color: #FF6347;
+        }
+        
+        .tab i {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .content {
+            height: calc(100% - 127px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        /* 主计时器页面样式 */
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        
+        .timer-circle {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 40px;
+        }
+        
+        .timer-circle.active {
+            background: linear-gradient(135deg, #ff9a9e 0%, #FF6347 100%);
+        }
+        
+        .timer-circle.break {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        }
+        
+        .timer-progress {
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .timer-time {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .timer-label {
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .timer-controls {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .timer-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #FF6347;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(255, 99, 71, 0.3);
+            cursor: pointer;
+        }
+        
+        .timer-btn.secondary {
+            background-color: #eee;
+            color: #666;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 任务列表页面样式 */
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .task-title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .add-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #FF6347;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 10px rgba(255, 99, 71, 0.3);
+        }
+        
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .task-item {
+            background-color: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .task-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .task-checkbox.checked {
+            background-color: #FF6347;
+            border-color: #FF6347;
+        }
+        
+        .task-content {
+            flex: 1;
+        }
+        
+        .task-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .task-details {
+            font-size: 14px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .task-pomodoros {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .pomodoro-icon {
+            color: #FF6347;
+            font-size: 12px;
+        }
+        
+        .pomodoro-icon.completed {
+            opacity: 1;
+        }
+        
+        .pomodoro-icon.pending {
+            opacity: 0.3;
+        }
+        
+        /* 统计页面样式 */
+        .stats-header {
+            margin-bottom: 20px;
+        }
+        
+        .stats-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stats-subtitle {
+            font-size: 16px;
+            color: #999;
+        }
+        
+        .stats-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stats-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stats-period {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .stats-numbers {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .stats-number-item {
+            text-align: center;
+        }
+        
+        .stats-number {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #FF6347;
+        }
+        
+        .stats-number-label {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .stats-chart {
+            height: 150px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 10px;
+        }
+        
+        .chart-bar {
+            width: 30px;
+            background-color: #FF6347;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .chart-label {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        /* 设置页面样式 */
+        .settings-header {
+            margin-bottom: 20px;
+        }
+        
+        .settings-title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .settings-section {
+            background-color: white;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .settings-item {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+        
+        .settings-label {
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .settings-value {
+            font-size: 16px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .settings-switch {
+            width: 50px;
+            height: 30px;
+            background-color: #eee;
+            border-radius: 15px;
+            position: relative;
+            transition: 0.3s;
+        }
+        
+        .settings-switch.active {
+            background-color: #FF6347;
+        }
+        
+        .settings-switch::after {
+            content: '';
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background-color: white;
+            top: 2px;
+            left: 2px;
+            transition: 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .settings-switch.active::after {
+            left: 22px;
+        }
+        
+        /* 新建任务弹窗样式 */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .modal {
+            width: 90%;
+            background-color: white;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            font-size: 24px;
+            color: #999;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #FF6347;
+        }
+        
+        .pomodoro-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .pomodoro-count {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .pomodoro-count.selected {
+            background-color: #FF6347;
+            color: white;
+            border-color: #FF6347;
+        }
+        
+        .form-button {
+            width: 100%;
+            padding: 15px;
+            background-color: #FF6347;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="prototype-title">番茄工作法 iOS 应用原型</h1>
+    
+    <!-- 主计时器页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="timer-container">
+                    <div class="timer-circle active">
+                        <div class="timer-progress">
+                            <div class="timer-time">23:45</div>
+                            <div class="timer-label">专注工作中</div>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <div class="timer-btn secondary"><i class="fas fa-stop"></i></div>
+                        <div class="timer-btn"><i class="fas fa-pause"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab active">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">主计时器页面（工作中）</div>
+    </div>
+    
+    <!-- 休息时间计时器页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="timer-container">
+                    <div class="timer-circle break">
+                        <div class="timer-progress">
+                            <div class="timer-time">04:59</div>
+                            <div class="timer-label">短休息中</div>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <div class="timer-btn secondary"><i class="fas fa-stop"></i></div>
+                        <div class="timer-btn" style="background-color: #4CD964;"><i class="fas fa-pause"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab active">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">休息时间计时器页面</div>
+    </div>
+    
+    <!-- 待机状态计时器页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="timer-container">
+                    <div class="timer-circle">
+                        <div class="timer-progress">
+                            <div class="timer-time">25:00</div>
+                            <div class="timer-label">准备开始</div>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <div class="timer-btn"><i class="fas fa-play"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab active">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">待机状态计时器页面</div>
+    </div>
+    
+    <!-- 任务列表页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="task-header">
+                    <div class="task-title">任务</div>
+                    <div class="add-btn"><i class="fas fa-plus"></i></div>
+                </div>
+                <div class="task-list">
+                    <div class="task-item">
+                        <div class="task-checkbox checked"><i class="fas fa-check"></i></div>
+                        <div class="task-content">
+                            <div class="task-name">完成产品设计文档</div>
+                            <div class="task-details">
+                                <div class="task-pomodoros">
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                </div>
+                                <span>已完成</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-checkbox"></div>
+                        <div class="task-content">
+                            <div class="task-name">编写周报</div>
+                            <div class="task-details">
+                                <div class="task-pomodoros">
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                </div>
+                                <span>进行中</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-checkbox"></div>
+                        <div class="task-content">
+                            <div class="task-name">阅读《深入理解计算机系统》</div>
+                            <div class="task-details">
+                                <div class="task-pomodoros">
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                </div>
+                                <span>未开始</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-checkbox"></div>
+                        <div class="task-content">
+                            <div class="task-name">健身锻炼</div>
+                            <div class="task-details">
+                                <div class="task-pomodoros">
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                </div>
+                                <span>未开始</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-checkbox"></div>
+                        <div class="task-content">
+                            <div class="task-name">准备明天的会议</div>
+                            <div class="task-details">
+                                <div class="task-pomodoros">
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                    <i class="fas fa-circle pomodoro-icon pending"></i>
+                                </div>
+                                <span>未开始</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab active">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">任务列表页面</div>
+    </div>
+    
+    <!-- 新建任务弹窗 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="task-header">
+                    <div class="task-title">任务</div>
+                    <div class="add-btn"><i class="fas fa-plus"></i></div>
+                </div>
+                <div class="task-list">
+                    <div class="task-item">
+                        <div class="task-checkbox checked"><i class="fas fa-check"></i></div>
+                        <div class="task-content">
+                            <div class="task-name">完成产品设计文档</div>
+                            <div class="task-details">
+                                <div class="task-pomodoros">
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    <i class="fas fa-circle pomodoro-icon completed"></i>
+                                </div>
+                                <span>已完成</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 其他任务项 -->
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab active">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+            
+            <!-- 弹窗 -->
+            <div class="modal-overlay">
+                <div class="modal">
+                    <div class="modal-header">
+                        <div class="modal-title">新建任务</div>
+                        <div class="modal-close"><i class="fas fa-times"></i></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">任务名称</label>
+                        <input type="text" class="form-input" placeholder="输入任务名称">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">预计番茄数</label>
+                        <div class="pomodoro-selector">
+                            <div class="pomodoro-count">1</div>
+                            <div class="pomodoro-count">2</div>
+                            <div class="pomodoro-count selected">3</div>
+                            <div class="pomodoro-count">4</div>
+                            <div class="pomodoro-count">5</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">备注（可选）</label>
+                        <input type="text" class="form-input" placeholder="添加备注">
+                    </div>
+                    <button class="form-button">创建任务</button>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">新建任务弹窗</div>
+    </div>
+    
+    <!-- 统计页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="stats-header">
+                    <div class="stats-title">统计</div>
+                    <div class="stats-subtitle">查看你的专注成果</div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-card-title">
+                        <span>本周概览</span>
+                        <span class="stats-period">6月12日-6月18日</span>
+                    </div>
+                    <div class="stats-numbers">
+                        <div class="stats-number-item">
+                            <div class="stats-number">23</div>
+                            <div class="stats-number-label">完成番茄</div>
+                        </div>
+                        <div class="stats-number-item">
+                            <div class="stats-number">9.5</div>
+                            <div class="stats-number-label">专注小时</div>
+                        </div>
+                        <div class="stats-number-item">
+                            <div class="stats-number">8</div>
+                            <div class="stats-number-label">完成任务</div>
+                        </div>
+                    </div>
+                    <div class="stats-chart">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="chart-bar" style="height: 40px;"></div>
+                            <div class="chart-label">一</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="chart-bar" style="height: 80px;"></div>
+                            <div class="chart-label">二</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="chart-bar" style="height: 60px;"></div>
+                            <div class="chart-label">三</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="chart-bar" style="height: 100px;"></div>
+                            <div class="chart-label">四</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="chart-bar" style="height: 70px;"></div>
+                            <div class="chart-label">五</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="chart-bar" style="height: 30px;"></div>
+                            <div class="chart-label">六</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="chart-bar" style="height: 20px;"></div>
+                            <div class="chart-label">日</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-card-title">
+                        <span>专注分布</span>
+                        <span class="stats-period">按任务类型</span>
+                    </div>
+                    <div style="height: 200px; background-color: #f9f9f9; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#FF6347 0% 45%, #4CD964 45% 65%, #5AC8FA 65% 80%, #FFCC00 80% 100%); position: relative;">
+                            <div style="position: absolute; width: 100px; height: 100px; background-color: white; border-radius: 50%; top: 25px; left: 25px;"></div>
+                        </div>
+                        <div style="margin-left: 20px;">
+                            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                <div style="width: 12px; height: 12px; background-color: #FF6347; border-radius: 2px; margin-right: 8px;"></div>
+                                <span style="font-size: 14px;">工作 (45%)</span>
+                            </div>
+                            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                <div style="width: 12px; height: 12px; background-color: #4CD964; border-radius: 2px; margin-right: 8px;"></div>
+                                <span style="font-size: 14px;">学习 (20%)</span>
+                            </div>
+                            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                <div style="width: 12px; height: 12px; background-color: #5AC8FA; border-radius: 2px; margin-right: 8px;"></div>
+                                <span style="font-size: 14px;">阅读 (15%)</span>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 12px; height: 12px; background-color: #FFCC00; border-radius: 2px; margin-right: 8px;"></div>
+                                <span style="font-size: 14px;">其他 (20%)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-card-title">
+                        <span>历史记录</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 600; margin-bottom: 5px;">今天</div>
+                            <div style="font-size: 14px; color: #999;">6月18日</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 16px; font-weight: 600; color: #FF6347;">4 个番茄</div>
+                            <div style="font-size: 14px; color: #999;">1小时40分钟</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 600; margin-bottom: 5px;">昨天</div>
+                            <div style="font-size: 14px; color: #999;">6月17日</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 16px; font-weight: 600; color: #FF6347;">6 个番茄</div>
+                            <div style="font-size: 14px; color: #999;">2小时30分钟</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 600; margin-bottom: 5px;">星期五</div>
+                            <div style="font-size: 14px; color: #999;">6月16日</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 16px; font-weight: 600; color: #FF6347;">5 个番茄</div>
+                            <div style="font-size: 14px; color: #999;">2小时5分钟</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab active">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">统计页面</div>
+    </div>
+    
+    <!-- 设置页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="settings-header">
+                    <div class="settings-title">设置</div>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-item">
+                        <div class="settings-label">工作时长</div>
+                        <div class="settings-value">25分钟 <i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">短休息时长</div>
+                        <div class="settings-value">5分钟 <i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">长休息时长</div>
+                        <div class="settings-value">15分钟 <i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">长休息间隔</div>
+                        <div class="settings-value">每4个番茄 <i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-item">
+                        <div class="settings-label">自动开始休息</div>
+                        <div class="settings-value">
+                            <div class="settings-switch active"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">自动开始工作</div>
+                        <div class="settings-value">
+                            <div class="settings-switch"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">声音提醒</div>
+                        <div class="settings-value">
+                            <div class="settings-switch active"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">振动提醒</div>
+                        <div class="settings-value">
+                            <div class="settings-switch active"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-item">
+                        <div class="settings-label">主题</div>
+                        <div class="settings-value">番茄红 <i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">提醒铃声</div>
+                        <div class="settings-value">经典铃声 <i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <div class="settings-item">
+                        <div class="settings-label">数据备份</div>
+                        <div class="settings-value"><i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">关于</div>
+                        <div class="settings-value"><i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab active">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">设置页面</div>
+    </div>
+    
+    <!-- 时长设置弹窗 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="settings-header">
+                    <div class="settings-title">设置</div>
+                </div>
+                
+                <!-- 设置内容 -->
+                <div class="settings-section">
+                    <div class="settings-item">
+                        <div class="settings-label">工作时长</div>
+                        <div class="settings-value">25分钟 <i class="fas fa-chevron-right" style="color: #ccc;"></i></div>
+                    </div>
+                    <!-- 其他设置项 -->
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab active">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+            
+            <!-- 弹窗 -->
+            <div class="modal-overlay">
+                <div class="modal">
+                    <div class="modal-header">
+                        <div class="modal-title">工作时长</div>
+                        <div class="modal-close"><i class="fas fa-times"></i></div>
+                    </div>
+                    <div style="padding: 20px 0; display: flex; justify-content: center; align-items: center;">
+                        <div style="display: flex; align-items: center;">
+                            <div style="font-size: 60px; font-weight: 700; color: #FF6347; width: 100px; text-align: right;">25</div>
+                            <div style="font-size: 24px; color: #666; margin-left: 10px;">分钟</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                        <input type="range" style="width: 80%;" min="5" max="60" step="5" value="25">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 0 40px; margin-bottom: 20px;">
+                        <div style="font-size: 14px; color: #999;">5分钟</div>
+                        <div style="font-size: 14px; color: #999;">60分钟</div>
+                    </div>
+                    <button class="form-button">保存设置</button>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">时长设置弹窗</div>
+    </div>
+    
+    <!-- 任务完成提醒页面 -->
+    <div>
+        <div class="device">
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>番茄时钟</span>
+                <span><i class="fas fa-battery-full"></i></span>
+            </div>
+            <div class="content">
+                <div class="timer-container">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="width: 100px; height: 100px; background-color: #4CD964; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                            <i class="fas fa-check" style="font-size: 50px; color: white;"></i>
+                        </div>
+                        <div style="font-size: 24px; font-weight: 700; margin-bottom: 10px;">番茄完成！</div>
+                        <div style="font-size: 16px; color: #666;">你已完成一个工作番茄</div>
+                    </div>
+                    
+                    <div style="background-color: white; border-radius: 16px; padding: 20px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);">
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 15px;">当前任务</div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">编写周报</div>
+                                <div class="task-details">
+                                    <div class="task-pomodoros">
+                                        <i class="fas fa-circle pomodoro-icon completed"></i>
+                                        <i class="fas fa-circle pomodoro-icon completed"></i>
+                                        <i class="fas fa-circle pomodoro-icon completed"></i>
+                                    </div>
+                                    <span>3/3</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                            <button style="background-color: #FF6347; color: white; border: none; border-radius: 8px; padding: 8px 15px; font-size: 14px; font-weight: 600;">标记为完成</button>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px;">
+                        <button style="flex: 1; padding: 15px; background-color: #eee; color: #666; border: none; border-radius: 8px; font-size: 16px; font-weight: 600;">跳过休息</button>
+                        <button style="flex: 1; padding: 15px; background-color: #4CD964; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600;">开始休息 (5:00)</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab active">
+                    <i class="fas fa-clock"></i>
+                    <span>计时器</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>统计</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </div>
+            </div>
+        </div>
+        <div class="device-name">任务完成提醒页面</div>
+    </div>
+</body>
+</html>
